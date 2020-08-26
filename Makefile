@@ -19,7 +19,7 @@ INC_IUP  = ./include/iup
 LD_LIB  = ./lib/linux_86
 endif
 endif
-C_FLAG = -I. -I./include -I$(INC_IUP) -c -std=c99
+C_FLAG = -I. -I./include -I./include/stlink -I$(INC_IUP) -c -std=c99
 L_FLAG = $(LD_LIB)/libiup.a $(LD_LIB)/libstlink.a $(LD_LIB)/libusb-1.0.a
 ifeq ($(OS),Windows_NT)
 L_FLAG += -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lcomctl32 -lsetupapi -mwindows -static 

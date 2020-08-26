@@ -119,28 +119,51 @@ static stlink_t *stlink_open_first(void)
     stlink_t* sl = NULL;
     sl = stlink_v1_open(0, 1);
     if (sl == NULL)
-        sl = stlink_open_usb(0, 1, NULL);
+        sl = stlink_open_usb(0, 1, NULL, 480);
 
     return sl;
 }
 
 int cb_btn_connect(Ihandle *self)
 {
+    char outbuff[1024];
+
     if (sl == NULL) {
         sl = stlink_open_first();
 
-        if (sl == NULL) {
-            IupMessage("error","fail to open stlink");
+        if (sl == NULL)
+        {
+            IupMessage("error", "fail to open stlink");
             return IUP_DEFAULT;
         }
 
         sl->verbose = 1;
 
         if (stlink_current_mode(sl) == STLINK_DEV_DFU_MODE)
-            stlink_exit_dfu_mode(sl);
+        {
+            if (stlink_exit_dfu_mode(sl))
+            {
+                sprintf(outbuff, "Failed to exit DFU mode");
+                IupMessage("error", outbuff);
+                return IUP_DEFAULT;
+            }
+        }
 
         if (stlink_current_mode(sl) != STLINK_DEV_DEBUG_MODE)
-            stlink_enter_swd_mode(sl);
+        {
+            if (stlink_enter_swd_mode(sl))
+            {
+                sprintf(outbuff, "Failed to enter SWD mode");
+                IupMessage("error", outbuff);
+                return IUP_DEFAULT;
+            }
+        }
+
+        if (sl->sram_size == 0)
+        {
+            IupMessage("error","target have 0k RAM!");
+            return IUP_CLOSE;
+        }
 
         // read the whole RAM
         uint8_t *buf = (uint8_t *)malloc(sl->sram_size);
@@ -207,7 +230,7 @@ void create_main_dialog(void)
     Ihandle *btn_connect;
 
     timer = IupTimer();
-    IupSetInt(timer, "TIME", 100);
+    IupSetInt(timer, "TIME", 250);
     IupSetCallback(timer, "ACTION_CB", (Icallback)cb_timer);
 
     btn_connect = IupButton("CONNECT", NULL);
@@ -234,6 +257,7 @@ void create_main_dialog(void)
 
 int main(int ac, char** av)
 {
+    printf("MyPrint");
     IupOpen(&ac, &av);
 
     create_main_dialog();
